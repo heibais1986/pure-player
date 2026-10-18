@@ -262,7 +262,7 @@ class PlaybackService : Service() {
         val eq = equalizer ?: return emptyList()
         return try {
             val range: ShortArray = eq.bandLevelRange
-            val levelRange: ShortRange = range[0]..range[1]
+            val levelRange: ShortRange = range[0].toShort()..range[1].toShort()
             (0 until eq.numberOfBands.toInt()).map { i ->
                 eq.getCenterFreq(i.toShort()) / 1000 to levelRange
             }
