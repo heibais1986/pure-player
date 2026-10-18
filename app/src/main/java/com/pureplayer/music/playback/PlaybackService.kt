@@ -261,9 +261,10 @@ class PlaybackService : Service() {
     fun equalizerBands(): List<Pair<Int, ShortRange>> {
         val eq = equalizer ?: return emptyList()
         return try {
-            val range = eq.bandLevelRange
-            (0 until eq.numberOfBands).map { i ->
-                eq.getCenterFreq(i) / 1000 to (range[0]..range[1])
+            val range: ShortArray = eq.bandLevelRange
+            val levelRange: ShortRange = range[0]..range[1]
+            (0 until eq.numberOfBands.toInt()).map { i ->
+                eq.getCenterFreq(i.toShort()) / 1000 to levelRange
             }
         } catch (_: Exception) {
             emptyList()
@@ -579,7 +580,7 @@ class PlaybackService : Service() {
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(
                         (mediaSession?.sessionToken as? android.media.session.MediaSession.Token)?.let {
-                            androidx.media.session.MediaSessionCompat.Token.fromToken(it)
+                            android.support.v4.media.session.MediaSessionCompat.Token.fromToken(it)
                         }
                     )
                     .setShowActionsInCompactView(0, 1, 2)

@@ -16,6 +16,8 @@ import coil.compose.AsyncImage
 import com.pureplayer.music.data.Track
 import com.pureplayer.music.playback.PlayerState
 import com.pureplayer.music.ui.MainActivity
+import com.pureplayer.music.ui.db
+import kotlinx.coroutines.launch
 
 fun formatMs(ms: Long): String {
     val s = (ms / 1000).toInt().coerceAtLeast(0)

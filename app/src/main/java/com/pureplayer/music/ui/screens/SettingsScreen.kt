@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.pureplayer.music.BuildConfig
 import com.pureplayer.music.ui.MainActivity
+import com.pureplayer.music.ui.db
+import kotlinx.coroutines.launch
 
 /** 设置页 */
 @Composable
