@@ -137,7 +137,7 @@ fun MiniPlayer(
             val progress = if (state.durationMs > 0)
                 (state.positionMs.toFloat() / state.durationMs).coerceIn(0f, 1f) else 0f
             LinearProgressIndicator(
-                progress = progress,
+                progress = { progress },
                 modifier = Modifier.fillMaxWidth().height(2.dp)
             )
         }

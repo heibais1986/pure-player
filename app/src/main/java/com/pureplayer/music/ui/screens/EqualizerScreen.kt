@@ -93,7 +93,7 @@ fun EqualizerScreen() {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             bands.forEachIndexed { i, (freqKhz, range) ->
-                val level = levels[i] ?: 0
+                val level: Short = levels[i] ?: 0
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(1f)

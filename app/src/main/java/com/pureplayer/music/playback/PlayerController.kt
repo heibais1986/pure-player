@@ -108,7 +108,7 @@ class PlayerController(private val context: Context) {
     fun setEqualizerEnabled(e: Boolean) = service?.setEqualizerEnabled(e)
     fun isEqualizerEnabled(): Boolean = service?.isEqualizerEnabled() ?: false
     fun equalizerBands() = service?.equalizerBands() ?: emptyList()
-    fun getBandLevel(b: Int) = service?.getBandLevel(b) ?: 0
+    fun getBandLevel(b: Int): Short = service?.getBandLevel(b) ?: 0
     fun setBandLevel(b: Int, l: Short) = service?.setBandLevel(b, l)
     fun resetEqualizer() = service?.resetEqualizer()
 }

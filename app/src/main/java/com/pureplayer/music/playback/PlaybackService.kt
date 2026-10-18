@@ -258,11 +258,11 @@ class PlaybackService : Service() {
 
     fun isEqualizerEnabled(): Boolean = prefs.getBoolean("equalizer_enabled", false)
 
-    fun equalizerBands(): List<Pair<Int, ShortRange>> {
+    fun equalizerBands(): List<Pair<Int, ClosedRange<Int>>> {
         val eq = equalizer ?: return emptyList()
         return try {
             val range: ShortArray = eq.bandLevelRange
-            val levelRange: ShortRange = range[0].toShort()..range[1].toShort()
+            val levelRange = range[0].toInt()..range[1].toInt()
             (0 until eq.numberOfBands.toInt()).map { i ->
                 eq.getCenterFreq(i.toShort()) / 1000 to levelRange
             }
@@ -288,7 +288,7 @@ class PlaybackService : Service() {
     }
 
     fun resetEqualizer() {
-        val n = try { equalizer?.numberOfBands ?: 0 } catch (_: Exception) { 0 }
+        val n = try { equalizer?.numberOfBands?.toInt() ?: 0 } catch (_: Exception) { 0 }
         for (i in 0 until n) setBandLevel(i, 0)
     }
 
@@ -637,5 +637,3 @@ class PlaybackService : Service() {
         )
     }
 }
-
-private typealias ShortRange = ClosedRange<Short>
