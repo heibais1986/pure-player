@@ -27,8 +27,7 @@ fun HomeScreen() {
     var menuTrack by remember { mutableStateOf<Track?>(null) }
 
     LaunchedEffect(Unit) {
-        // play_records 无主键，同一首歌多次播放会留下多行
-        recent = activity.db().playRecordDao().recent().distinctBy { it.trackUri }
+        recent = activity.db().playRecordDao().recent()
     }
 
     // 把播放记录映射回 Track（尽量从当前曲库匹配）
