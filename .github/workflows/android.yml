@@ -27,7 +27,19 @@ jobs:
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
       - name: Assemble debug
-        run: gradle --no-daemon assembleDebug
+        run: |
+          set -o pipefail
+          gradle --no-daemon assembleDebug 2>&1 | tee "$RUNNER_TEMP/build.log"
+      # 仓库即使设为 public，日志下载接口仍要求认证；把错误行写成 annotations 才能用 API 读到
+      - name: Publish build errors as annotations
+        if: failure()
+        run: |
+          [ -f "$RUNNER_TEMP/build.log" ] || exit 0
+          grep -E '^(e: |ERROR: |> Task .* FAILED|   > )' \
+            "$RUNNER_TEMP/build.log" | sed 's/%/%25/g' | head -60 |
+            while IFS= read -r line; do
+              printf '::error::%s\n' "$line"
+            done
       - uses: actions/upload-artifact@v4
         with:
           name: app-debug.apk
@@ -61,15 +73,25 @@ jobs:
       # Secrets 未配置时这里会产出无法安装的 unsigned 包，仅用于验证构建
       - name: Assemble release
         run: |
+          set -o pipefail
           if [ -f keystore/release.keystore ]; then
             gradle --no-daemon assembleRelease \
               -PRELEASE_STORE_FILE=keystore/release.keystore \
               -PRELEASE_STORE_PASSWORD="$STORE_PASSWORD" \
               -PRELEASE_KEY_ALIAS="$KEY_ALIAS" \
-              -PRELEASE_KEY_PASSWORD="$KEY_PASSWORD"
+              -PRELEASE_KEY_PASSWORD="$KEY_PASSWORD" 2>&1 | tee "$RUNNER_TEMP/build.log"
           else
-            gradle --no-daemon assembleRelease
+            gradle --no-daemon assembleRelease 2>&1 | tee "$RUNNER_TEMP/build.log"
           fi
+      - name: Publish build errors as annotations
+        if: failure()
+        run: |
+          [ -f "$RUNNER_TEMP/build.log" ] || exit 0
+          grep -E '^(e: |ERROR: |> Task .* FAILED|   > )' \
+            "$RUNNER_TEMP/build.log" | sed 's/%/%25/g' | head -60 |
+            while IFS= read -r line; do
+              printf '::error::%s\n' "$line"
+            done
 
       - uses: actions/upload-artifact@v4
         if: env.KEYSTORE_BASE64 != ''
