@@ -27,7 +27,8 @@ fun HomeScreen() {
     var menuTrack by remember { mutableStateOf<Track?>(null) }
 
     LaunchedEffect(Unit) {
-        recent = activity.db().playRecordDao().recent()
+        // play_records 无主键，同一首歌多次播放会留下多行
+        recent = activity.db().playRecordDao().recent().distinctBy { it.trackUri }
     }
 
     // 把播放记录映射回 Track（尽量从当前曲库匹配）
@@ -90,7 +91,7 @@ fun HomeScreen() {
                 )
             }
         } else {
-            items(recent.take(20), key = { it.trackUri }) { r ->
+            items(recent.take(20), key = { "recent_${it.trackUri}" }) { r ->
                 val t = toTrack(r) ?: return@items
                 TrackRow(
                     track = t,
@@ -107,7 +108,7 @@ fun HomeScreen() {
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
-        items(tracks.take(50), key = { it.uri.toString() }) { t ->
+        items(tracks.take(50), key = { "all_${it.uri}" }) { t ->
             val state by activity.player.state.collectAsState()
             TrackRow(
                 track = t,

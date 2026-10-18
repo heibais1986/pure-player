@@ -197,7 +197,7 @@ fun PlaylistDetailScreen(playlistId: Long) {
         } else {
             val all = activity.db().playlistDao().all()
             title = all.find { it.id == playlistId }?.name ?: "歌单"
-            val pts = activity.db().playlistDao().tracks(playlistId)
+            val pts = activity.db().playlistDao().tracks(playlistId).distinctBy { it.trackUri }
             val lib = activity.tracks.associateBy { it.uri.toString() }
             tracks = pts.map { pt ->
                 lib[pt.trackUri] ?: toTrack(pt.trackUri, pt.title, pt.artist, pt.durationMs)
