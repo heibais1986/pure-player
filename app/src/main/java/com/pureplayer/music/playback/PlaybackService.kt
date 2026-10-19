@@ -121,6 +121,11 @@ class PlaybackService : Service() {
         if (prefs.getBoolean("equalizer_enabled", false)) {
             applyEqualizer()
         }
+        val savedRepeat = prefs.getInt("repeat_mode", 0).coerceIn(0, RepeatMode.values().lastIndex)
+        _state.value = _state.value.copy(
+            shuffle = prefs.getBoolean("shuffle", false),
+            repeatMode = RepeatMode.values()[savedRepeat]
+        )
         handler.post(progressTick)
     }
 
@@ -159,10 +164,13 @@ class PlaybackService : Service() {
 
     // ---------- 播放控制 ----------
 
-    fun play(track: Track, newQueue: List<Track>) {
+    fun play(track: Track, newQueue: List<Track>, shuffle: Boolean = false) {
         queue = newQueue
         index = newQueue.indexOfFirst { it.uri == track.uri }.takeIf { it >= 0 } ?: 0
-        shuffledOrder = queue.indices.shuffled()
+        if (shuffle) setShuffleState(true)
+        // 随机时把用户点的那首放第一位，其余乱序
+        shuffledOrder = if (_state.value.shuffle) listOf(index) + (queue.indices - index).shuffled()
+        else queue.indices.toList()
         startTrack(queue[index], 0L)
     }
 
@@ -178,7 +186,13 @@ class PlaybackService : Service() {
 
     fun next() {
         if (queue.isEmpty()) return
-        index = nextIndex()
+        val n = nextIndex()
+        if (n < 0) {
+            // 循环关闭且已到列表末尾：停住，不回卷
+            pause()
+            return
+        }
+        index = n
         startTrack(queue[index], 0L)
     }
 
@@ -228,12 +242,15 @@ class PlaybackService : Service() {
             RepeatMode.ONE -> RepeatMode.OFF
         }
         _state.value = _state.value.copy(repeatMode = next)
+        prefs.edit().putInt("repeat_mode", next.ordinal).apply()
     }
 
-    fun toggleShuffle() {
-        val s = !_state.value.shuffle
-        if (s) shuffledOrder = queue.indices.shuffled()
-        _state.value = _state.value.copy(shuffle = s)
+    fun toggleShuffle() = setShuffleState(!_state.value.shuffle)
+
+    private fun setShuffleState(on: Boolean) {
+        if (on) shuffledOrder = queue.indices.shuffled()
+        _state.value = _state.value.copy(shuffle = on)
+        prefs.edit().putBoolean("shuffle", on).apply()
     }
 
     /** 睡眠定时（分钟，0=关闭；61=播完当前歌曲） */
@@ -313,16 +330,21 @@ class PlaybackService : Service() {
 
     // ---------- 内部 ----------
 
+    /** 返回下一个索引，-1 表示列表播放结束（循环关闭） */
     private fun nextIndex(): Int {
         val st = _state.value
-        return when {
-            st.repeatMode == RepeatMode.ONE -> index
-            st.shuffle -> {
-                val pos = shuffledOrder.indexOf(index)
-                shuffledOrder[(pos + 1) % shuffledOrder.size]
-            }
-            else -> (index + 1) % queue.size
+        if (st.repeatMode == RepeatMode.ONE) return index
+        if (st.shuffle) {
+            val pos = shuffledOrder.indexOf(index)
+            if (pos + 1 < shuffledOrder.size) return shuffledOrder[pos + 1]
+            if (st.repeatMode == RepeatMode.OFF) return -1
+            // 循环全部回到队首时重洗，避免第二轮沿用同一序列
+            shuffledOrder = queue.indices.shuffled()
+            return shuffledOrder.first()
         }
+        if (index + 1 < queue.size) return index + 1
+        if (st.repeatMode == RepeatMode.OFF) return -1
+        return 0
     }
 
     private fun startTrack(track: Track, startMs: Long) {

@@ -149,7 +149,8 @@ fun MiniPlayer(
 fun TrackActionsMenu(
     track: Track,
     onDismiss: () -> Unit,
-    onAddedToPlaylist: () -> Unit = {}
+    onAddedToPlaylist: () -> Unit = {},
+    onShufflePlay: (() -> Unit)? = null
 ) {
     val activity = MainActivity.current()
     val scope = rememberCoroutineScope()
@@ -198,6 +199,16 @@ fun TrackActionsMenu(
                 leadingIcon = { Icon(Icons.Filled.PlaylistAdd, null) },
                 onClick = { showPlaylists = true }
             )
+            if (onShufflePlay != null) {
+                DropdownMenuItem(
+                    text = { Text("随机播放此列表") },
+                    leadingIcon = { Icon(Icons.Filled.Shuffle, null) },
+                    onClick = {
+                        onShufflePlay()
+                        onDismiss()
+                    }
+                )
+            }
         }
     } else {
         AddToPlaylistView(track = track, onDone = {

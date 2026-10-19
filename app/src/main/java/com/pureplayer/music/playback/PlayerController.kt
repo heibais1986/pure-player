@@ -23,9 +23,9 @@ class PlayerController(private val context: Context) {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             service = (binder as PlaybackService.LocalBinder).service()
             bound = true
-            pendingPlay?.let { (t, q) ->
+            pendingPlay?.let { p ->
                 pendingPlay = null
-                service?.play(t, q)
+                service?.play(p.track, p.queue, p.shuffle)
             }
         }
 
@@ -35,7 +35,9 @@ class PlayerController(private val context: Context) {
         }
     }
 
-    private var pendingPlay: Pair<Track, List<Track>>? = null
+    private data class PendingPlay(val track: Track, val queue: List<Track>, val shuffle: Boolean)
+
+    private var pendingPlay: PendingPlay? = null
 
     fun start() {
         val intent = Intent(context, PlaybackService::class.java)
@@ -52,9 +54,10 @@ class PlayerController(private val context: Context) {
         }
     }
 
-    fun play(track: Track, queue: List<Track>) {
+    fun play(track: Track, queue: List<Track>, shuffle: Boolean = false) {
         val s = service
-        if (s != null) s.play(track, queue) else pendingPlay = track to queue
+        if (s != null) s.play(track, queue, shuffle)
+        else pendingPlay = PendingPlay(track, queue, shuffle)
     }
 
     fun playUri(uri: Uri) {

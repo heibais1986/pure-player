@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.pureplayer.music.data.Track
 import com.pureplayer.music.data.db.PlayRecord
+import com.pureplayer.music.playback.RepeatMode
 import com.pureplayer.music.ui.MainActivity
 import com.pureplayer.music.ui.db
 import kotlinx.coroutines.launch
@@ -24,7 +25,8 @@ fun HomeScreen() {
     val activity = MainActivity.current()
     val scope = rememberCoroutineScope()
     var recent by remember { mutableStateOf<List<PlayRecord>>(emptyList()) }
-    var menuTrack by remember { mutableStateOf<Track?>(null) }
+    var menu by remember { mutableStateOf<Pair<Track, List<Track>>?>(null) }
+    val pState by activity.player.state.collectAsState()
 
     LaunchedEffect(Unit) {
         recent = activity.db().playRecordDao().recent()
@@ -56,6 +58,22 @@ fun HomeScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("首页", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                IconButton(onClick = { activity.player.toggleShuffle() }) {
+                    Icon(
+                        Icons.Filled.Shuffle,
+                        "随机播放",
+                        tint = if (pState.shuffle) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { activity.player.toggleRepeat() }) {
+                    Icon(
+                        if (pState.repeatMode == RepeatMode.ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                        "循环播放",
+                        tint = if (pState.repeatMode == RepeatMode.OFF) MaterialTheme.colorScheme.onSurfaceVariant
+                        else MaterialTheme.colorScheme.primary
+                    )
+                }
                 IconButton(onClick = { activity.scanLibrary() }) {
                     Icon(Icons.Filled.Refresh, "重新扫描")
                 }
@@ -95,7 +113,7 @@ fun HomeScreen() {
                 TrackRow(
                     track = t,
                     onClick = { activity.player.play(t, tracks.ifEmpty { listOf(t) }) },
-                    onMore = { menuTrack = t }
+                    onMore = { menu = t to tracks.ifEmpty { listOf(t) } }
                 )
             }
         }
@@ -113,16 +131,22 @@ fun HomeScreen() {
                 track = t,
                 isPlaying = state.track?.uri == t.uri,
                 onClick = { activity.player.play(t, tracks) },
-                onMore = { menuTrack = t }
+                onMore = { menu = t to tracks }
             )
         }
     }
 
-    menuTrack?.let { t ->
+    menu?.let { (t, q) ->
         AlertDialog(
-            onDismissRequest = { menuTrack = null },
+            onDismissRequest = { menu = null },
             confirmButton = {},
-            text = { TrackActionsMenu(track = t, onDismiss = { menuTrack = null }) }
+            text = {
+                TrackActionsMenu(
+                    track = t,
+                    onDismiss = { menu = null },
+                    onShufflePlay = { activity.player.play(t, q, shuffle = true) }
+                )
+            }
         )
     }
 }

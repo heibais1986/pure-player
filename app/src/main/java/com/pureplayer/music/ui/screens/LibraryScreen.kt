@@ -18,7 +18,7 @@ fun LibraryScreen() {
     val activity = MainActivity.current()
     var tab by remember { mutableIntStateOf(0) }
     var query by remember { mutableStateOf("") }
-    var menuTrack by remember { mutableStateOf<Track?>(null) }
+    var menu by remember { mutableStateOf<Pair<Track, List<Track>>?>(null) }
 
     val tracks = activity.tracks
     val filtered = remember(tracks, query) {
@@ -49,18 +49,24 @@ fun LibraryScreen() {
             0 -> SongList(
                 tracks = filtered,
                 onPlay = { t -> activity.player.play(t, filtered) },
-                onMore = { menuTrack = it }
+                onMore = { menu = it to filtered }
             )
             1 -> AlbumList(tracks = filtered, onPlay = { t -> activity.player.play(t, filtered) })
             2 -> ArtistList(tracks = filtered, onPlay = { t -> activity.player.play(t, filtered) })
         }
     }
 
-    menuTrack?.let { t ->
+    menu?.let { (t, q) ->
         AlertDialog(
-            onDismissRequest = { menuTrack = null },
+            onDismissRequest = { menu = null },
             confirmButton = {},
-            text = { TrackActionsMenu(track = t, onDismiss = { menuTrack = null }) }
+            text = {
+                TrackActionsMenu(
+                    track = t,
+                    onDismiss = { menu = null },
+                    onShufflePlay = { activity.player.play(t, q, shuffle = true) }
+                )
+            }
         )
     }
 }
