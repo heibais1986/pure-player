@@ -188,8 +188,16 @@ class MainActivity : ComponentActivity() {
     // 让子 Composable 能拿到 Activity
     companion object {
         @Composable
-        fun current(): MainActivity =
-            androidx.compose.ui.platform.LocalContext.current as MainActivity
+        fun current(): MainActivity {
+            // AlertDialog / Popup 里 LocalContext 是 ContextThemeWrapper，直接强转会 ClassCastException
+            var ctx: android.content.Context =
+                androidx.compose.ui.platform.LocalContext.current
+            while (ctx is android.content.ContextWrapper) {
+                if (ctx is MainActivity) return ctx
+                ctx = ctx.baseContext
+            }
+            error("LocalContext 中没有 MainActivity")
+        }
     }
 }
 
