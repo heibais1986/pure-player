@@ -46,6 +46,10 @@ android {
     }
 
     buildTypes {
+        // debug 与 release 签名不同且同 applicationId 会互斥，加后缀让两者可共存
+        debug {
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = false
             if (releaseKeystore?.isFile == true) {
