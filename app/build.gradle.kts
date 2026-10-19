@@ -8,6 +8,8 @@ plugins {
 
 val keystorePath = providers.gradleProperty("RELEASE_STORE_FILE").orNull
 val releaseKeystore = keystorePath?.let { rootProject.file(it) }
+val debugKeystorePath = providers.gradleProperty("DEBUG_STORE_FILE").orNull
+val debugKeystore = debugKeystorePath?.let { rootProject.file(it) }
 
 android {
     namespace = "com.pureplayer.music"
@@ -28,6 +30,17 @@ android {
                 storePassword = providers.gradleProperty("RELEASE_STORE_PASSWORD").get()
                 keyAlias = providers.gradleProperty("RELEASE_KEY_ALIAS").get()
                 keyPassword = providers.gradleProperty("RELEASE_KEY_PASSWORD").get()
+            }
+        }
+    }
+
+    if (debugKeystore?.isFile == true) {
+        signingConfigs {
+            getByName("debug") {
+                storeFile = debugKeystore
+                storePassword = providers.gradleProperty("DEBUG_STORE_PASSWORD").orNull ?: "android"
+                keyAlias = providers.gradleProperty("DEBUG_KEY_ALIAS").orNull ?: "androiddebugkey"
+                keyPassword = providers.gradleProperty("DEBUG_KEY_PASSWORD").orNull ?: "android"
             }
         }
     }
